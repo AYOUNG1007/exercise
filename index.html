@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Dance Sync Studio</title>
+    <title>AI Dance Sync Studio - Ultimate Max Camera</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts & FontAwesome Icons -->
@@ -13,38 +13,53 @@
     <style>
         body {
             font-family: 'Poppins', 'Noto Sans KR', sans-serif;
-            background: linear-gradient(135deg, #090d16 0%, #111126 100%);
+            background: linear-gradient(135deg, #060814 0%, #0b0b1e 100%);
             color: #f8fafc;
             min-height: 100vh;
         }
         .glass-panel {
-            background: rgba(15, 23, 42, 0.75);
-            backdrop-filter: blur(16px);
+            background: rgba(10, 15, 30, 0.8);
+            backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
         .glow-green {
-            box-shadow: 0 0 25px rgba(34, 197, 94, 0.5);
+            box-shadow: 0 0 35px rgba(34, 197, 94, 0.6);
         }
         .glow-purple {
-            box-shadow: 0 0 30px rgba(168, 85, 247, 0.4);
+            box-shadow: 0 0 35px rgba(168, 85, 247, 0.5);
         }
         
-        /* [핵심 수정] 카메라 화면 잘림과 크기 축소 문제를 완전히 해결하기 위해 Video와 Canvas 전체를 가득 채우도록 강제 설정 */
+        /* [🚨 절대적 카메라 무제한 크기 패치]
+           티처블 머신 라이브러리가 주입하는 동적 래퍼 div, video, canvas 등의 
+           모든 인라인 고정값(예: 400x300)을 물리적으로 강제 무력화하고 100% 꽉 채우는 절대 속성입니다.
+        */
+        #webcam-container,
+        #webcam-container * {
+            box-sizing: border-box !important;
+        }
+        
+        #webcam-container canvas,
         #webcam-container video,
-        #webcam-container canvas {
-            transform: scaleX(-1) !important;
-            -webkit-transform: scaleX(-1) !important;
-            -moz-transform: scaleX(-1) !important;
-            border-radius: 16px;
+        #webcam-container div {
             width: 100% !important;
             height: 100% !important;
-            object-fit: cover !important; /* 비율 왜곡 없이 컨테이너에 맞춰 꽉 차게 변경 */
-            background-color: #020617;
+            min-width: 100% !important;
+            min-height: 100% !important;
+            max-width: 100% !important;
+            max-height: 100% !important;
+            object-fit: cover !important; /* 검은 여백 없이 화면에 꽉 맞추어 가득 차게 설정 */
+            border-radius: 20px !important;
+            transform: scaleX(-1) !important; /* 거울 반전 모드 유지 */
+            -webkit-transform: scaleX(-1) !important;
+            -moz-transform: scaleX(-1) !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
         }
-        
-        /* 부드러운 전환 효과 */
+
+        /* 부드러운 레이아웃 모드 전환 애니메이션 */
         .mode-transition {
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
         }
     </style>
 </head>
@@ -52,11 +67,11 @@
 
     <!-- Header Section -->
     <header class="w-full max-w-7xl text-center mb-5">
-        <h1 class="text-3xl md:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-indigo-400">
+        <h1 class="text-4xl md:text-6xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-indigo-400">
             AI DANCE SYNC STUDIO
         </h1>
-        <p class="text-gray-400 mt-2 text-xs md:text-sm">
-            동작 매칭을 원활하게 돕는 화면 모드를 전환하며 고득점을 획득해 보세요!
+        <p class="text-gray-400 mt-2 text-xs md:text-sm tracking-wider font-medium">
+            동작 매칭을 원활하게 돕는 초강력 풀사이즈 카메라 뷰포트 시스템
         </p>
     </header>
 
@@ -64,65 +79,64 @@
     <main class="w-full max-w-7xl flex flex-col gap-5">
 
         <!-- Control Bar: Layout Modes Selector & Stats Combo -->
-        <section class="glass-panel rounded-2xl p-4 flex flex-col sm:flex-row gap-4 justify-between items-center shadow-lg">
+        <section class="glass-panel rounded-2xl p-4 flex flex-col sm:flex-row gap-4 justify-between items-center shadow-2xl">
             <!-- View Mode Switcher Buttons -->
-            <div class="flex items-center gap-2 bg-slate-950/60 p-1.5 rounded-xl border border-slate-800">
-                <button onclick="switchViewMode('split')" id="btn-mode-split" class="px-4 py-2 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 bg-indigo-600 text-white shadow">
+            <div class="flex items-center gap-2 bg-slate-950/80 p-2 rounded-2xl border border-slate-800">
+                <button onclick="switchViewMode('split')" id="btn-mode-split" class="px-5 py-2.5 rounded-xl text-xs md:text-sm font-extrabold transition-all duration-300 bg-indigo-600 text-white shadow-lg">
                     <i class="fa-solid fa-columns mr-1.5"></i>나란히 연습 (좌우 분할)
                 </button>
-                <button onclick="switchViewMode('overlay')" id="btn-mode-overlay" class="px-4 py-2 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 text-gray-400 hover:text-white">
+                <button onclick="switchViewMode('overlay')" id="btn-mode-overlay" class="px-5 py-2.5 rounded-xl text-xs md:text-sm font-extrabold transition-all duration-300 text-gray-400 hover:text-white">
                     <i class="fa-solid fa-clone mr-1.5"></i>거울 연습 (가이드 오버랩)
                 </button>
             </div>
 
             <!-- Score / Combo Quick Indicator -->
-            <div class="flex items-center gap-6">
+            <div class="flex items-center gap-8">
                 <div class="text-center sm:text-right">
-                    <span class="text-[10px] text-gray-400 uppercase tracking-widest font-semibold block">My Score</span>
-                    <span class="text-2xl md:text-3xl font-extrabold text-green-400" id="score-val">0</span>
+                    <span class="text-[10px] text-gray-400 uppercase tracking-widest font-bold block">My Score</span>
+                    <span class="text-3xl md:text-4xl font-black text-green-400" id="score-val">0</span>
                 </div>
-                <div class="h-8 w-px bg-slate-800"></div>
+                <div class="h-10 w-px bg-slate-800"></div>
                 <div class="text-center sm:text-left">
-                    <span class="text-[10px] text-gray-400 uppercase tracking-widest font-semibold block">Combo</span>
-                    <span class="text-2xl md:text-3xl font-extrabold text-purple-400 animate-pulse" id="combo-val">0</span>
+                    <span class="text-[10px] text-gray-400 uppercase tracking-widest font-bold block">Combo</span>
+                    <span class="text-3xl md:text-4xl font-black text-purple-400 animate-pulse" id="combo-val">0</span>
                 </div>
             </div>
         </section>
 
         <!-- Current Action HUD Banner -->
-        <section class="glass-panel rounded-2xl p-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-center justify-between text-center md:text-left">
+        <section class="glass-panel rounded-2xl p-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-center justify-between text-center md:text-left shadow-lg">
             <div class="flex items-center gap-4 justify-center md:justify-start">
-                <div class="p-3 bg-yellow-500/10 rounded-xl border border-yellow-500/20 text-yellow-400 text-xl">
+                <div class="p-4 bg-yellow-500/10 rounded-2xl border border-yellow-500/25 text-yellow-400 text-2xl">
                     <i class="fa-solid fa-bullseye animate-bounce"></i>
                 </div>
                 <div>
-                    <p class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">지금 따라할 동작 (Target)</p>
-                    <div class="text-xl md:text-2xl font-black text-yellow-300 tracking-wide" id="target-val">REST</div>
+                    <p class="text-[11px] text-gray-400 uppercase tracking-wider font-bold">지금 따라할 동작 (Target)</p>
+                    <div class="text-2xl md:text-3xl font-black text-yellow-300 tracking-wide" id="target-val">REST</div>
                 </div>
             </div>
             <div class="flex items-center gap-4 justify-center md:justify-end">
                 <div class="text-right hidden md:block">
-                    <p class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">내 현재 춤 동작 (Detected)</p>
-                    <div class="text-xl md:text-2xl font-black text-cyan-400 tracking-wide truncate" id="my-action-val">로딩 대기 중...</div>
+                    <p class="text-[11px] text-gray-400 uppercase tracking-wider font-bold">내 현재 춤 동작 (Detected)</p>
+                    <div class="text-2xl md:text-3xl font-black text-cyan-400 tracking-wide truncate" id="my-action-val">로딩 대기 중...</div>
                 </div>
-                <div class="p-3 bg-cyan-500/10 rounded-xl border border-cyan-500/20 text-cyan-400 text-xl">
+                <div class="p-4 bg-cyan-500/10 rounded-2xl border border-cyan-500/25 text-cyan-400 text-2xl">
                     <i class="fa-solid fa-user-running animate-pulse"></i>
                 </div>
                 <div class="text-left md:hidden">
-                    <p class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">내 현재 춤 동작</p>
-                    <div class="text-lg font-black text-cyan-400" id="my-action-val-mobile">로딩 대기 중...</div>
+                    <p class="text-[11px] text-gray-400 uppercase tracking-wider font-bold">내 현재 춤 동작</p>
+                    <div class="text-xl font-black text-cyan-400" id="my-action-val-mobile">로딩 대기 중...</div>
                 </div>
             </div>
         </section>
 
         <!-- Interactive Studio Screen Viewports -->
-        <!-- [수정] 높이를 h-[560px]에서 h-[680px]로 대폭 늘려 대형 화면 구축. 
-             분할 모드에서 카메라 카드 영역을 더 넓게 쓰기 위해 grid-cols-12(비디오 5 : 카메라 7) 레이아웃 적용 -->
-        <section id="studio-viewport-container" class="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[680px] relative">
+        <!-- 높이를 초거대화한 [h-[750px]] 스테이지로 확대 -->
+        <section id="studio-viewport-container" class="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[750px] relative">
             
             <!-- Video Stage Card (가로 비율 5 할당) -->
-            <div id="video-card" class="glass-panel rounded-2xl overflow-hidden flex flex-col h-[680px] mode-transition shadow-2xl relative z-10 lg:col-span-5 w-full">
-                <div id="video-header" class="bg-slate-900/90 px-4 py-2.5 border-b border-slate-800/80 flex justify-between items-center">
+            <div id="video-card" class="glass-panel rounded-2xl overflow-hidden flex flex-col h-[750px] mode-transition shadow-2xl relative z-10 lg:col-span-5 w-full">
+                <div id="video-header" class="bg-slate-900/95 px-4 py-3 border-b border-slate-800 flex justify-between items-center">
                     <span class="font-bold text-xs text-indigo-300 flex items-center gap-2">
                         <i class="fa-solid fa-circle-play text-rose-500 animate-pulse"></i> DANCE GUIDE VIDEO
                     </span>
@@ -133,51 +147,51 @@
                     <div id="player" class="w-full h-full absolute inset-0"></div>
                 </div>
                 <!-- Control Buttons -->
-                <div id="video-controls" class="p-3 bg-slate-950/80 flex justify-between gap-2 border-t border-slate-900">
-                    <button onclick="playVideo()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 py-2 rounded-xl text-xs md:text-sm font-bold transition flex items-center justify-center gap-2">
+                <div id="video-controls" class="p-4 bg-slate-950/80 flex justify-between gap-2 border-t border-slate-900">
+                    <button onclick="playVideo()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl text-xs md:text-sm font-bold transition flex items-center justify-center gap-2">
                         <i class="fa-solid fa-play"></i> 재생
                     </button>
-                    <button onclick="pauseVideo()" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs md:text-sm transition flex items-center justify-center">
+                    <button onclick="pauseVideo()" class="bg-slate-800 hover:bg-slate-700 px-5 py-3 rounded-xl text-xs md:text-sm transition flex items-center justify-center">
                         <i class="fa-solid fa-pause"></i>
                     </button>
-                    <button onclick="restartVideo()" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs md:text-sm transition flex items-center justify-center">
+                    <button onclick="restartVideo()" class="bg-slate-800 hover:bg-slate-700 px-5 py-3 rounded-xl text-xs md:text-sm transition flex items-center justify-center">
                         <i class="fa-solid fa-arrow-rotate-left"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Webcam AI Detection Stage Card (가로 비율 7 할당으로 카메라 대폭 확대) -->
-            <div id="webcam-card" class="glass-panel rounded-2xl overflow-hidden flex flex-col h-[680px] mode-transition shadow-2xl relative z-20 lg:col-span-7 w-full">
-                <div class="bg-slate-900/90 px-4 py-2.5 border-b border-slate-800/80 flex justify-between items-center">
+            <!-- Webcam AI Detection Stage Card (가로 비율 7 할당으로 카메라 최대 확보) -->
+            <div id="webcam-card" class="glass-panel rounded-3xl overflow-hidden flex flex-col h-[750px] mode-transition shadow-2xl relative z-20 lg:col-span-7 w-full border border-pink-500/20">
+                <div class="bg-slate-900/95 px-4 py-3 border-b border-slate-800 flex justify-between items-center">
                     <span class="font-bold text-xs text-pink-400 flex items-center gap-2">
                         <i class="fa-solid fa-camera text-pink-500 animate-pulse"></i> AI MOTION DETECTOR (MIRROR)
                     </span>
-                    <span class="text-[10px] text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-800/30">
+                    <span class="text-[10px] text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-3 py-1 rounded-full border border-emerald-800/30">
                         <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block animate-ping"></span> Live Analyzer
                     </span>
                 </div>
                 
                 <!-- Camera view area -->
                 <div class="relative flex-grow bg-slate-950 flex items-center justify-center overflow-hidden">
-                    <!-- w-full h-full 및 flex 구성을 조율하여 카메라가 내부 공간 전체를 점유하도록 교정 -->
-                    <div id="webcam-container" class="relative w-full h-full flex items-center justify-center rounded-xl overflow-hidden">
+                    <!-- 거대한 절대 컨테이너 -->
+                    <div id="webcam-container" class="absolute inset-0 w-full h-full flex items-center justify-center rounded-2xl overflow-hidden bg-slate-950">
                         <div id="loading-ai" class="absolute inset-0 flex flex-col items-center justify-center gap-4 text-center z-30 p-4 bg-slate-950/90">
-                            <button onclick="initAI()" id="start-camera-btn" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 px-6 py-4 rounded-xl font-black text-white shadow-lg transform active:scale-95 transition flex items-center gap-2 text-lg glow-green">
+                            <button onclick="initAI()" id="start-camera-btn" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 px-8 py-5 rounded-2xl font-black text-white shadow-2xl transform active:scale-95 transition flex items-center gap-3 text-xl glow-green animate-bounce">
                                 <i class="fa-solid fa-video"></i> 연습 시작 & 카메라 허용
                             </button>
-                            <p class="text-xs text-gray-400 max-w-xs leading-relaxed">
+                            <p class="text-sm text-gray-400 max-w-sm leading-relaxed">
                                 본인의 댄스 실시간 거울 화면을 부착하기 위해 카메라 액세스를 활성화하고 로딩해 주세요.
                             </p>
                         </div>
                     </div>
                     <!-- Match Flash Feedback Screen Overlay -->
                     <div id="flash-overlay" class="absolute inset-0 bg-emerald-500/0 pointer-events-none transition-all duration-150 z-20 flex items-center justify-center">
-                        <div id="perfect-text" class="text-white font-black text-5xl md:text-6xl tracking-widest scale-0 transition-transform duration-100 italic drop-shadow-xl select-none">PERFECT!</div>
+                        <div id="perfect-text" class="text-white font-black text-6xl md:text-7xl tracking-widest scale-0 transition-transform duration-100 italic drop-shadow-2xl select-none">PERFECT!</div>
                     </div>
                 </div>
 
                 <!-- Confidence Bars Container -->
-                <div class="p-3 bg-slate-900/90 border-t border-slate-800/50 text-[10px] md:text-xs">
+                <div class="p-4 bg-slate-900/95 border-t border-slate-800/80 text-[10px] md:text-xs">
                     <h4 class="font-bold text-gray-400 mb-2 flex items-center gap-1.5">
                         <i class="fa-solid fa-chart-simple text-indigo-400"></i> 실시간 분류 Confidence 지표
                     </h4>
@@ -190,13 +204,13 @@
         </section>
 
         <!-- Information & Instructions Box -->
-        <section class="glass-panel rounded-2xl p-5 md:p-6 shadow-xl">
+        <section class="glass-panel rounded-2xl p-5 md:p-6 shadow-2xl">
             <h3 class="text-base md:text-lg font-bold text-slate-100 mb-3 flex items-center gap-2">
                 <i class="fa-solid fa-circle-info text-indigo-400"></i>스튜디오 사용 핵심 가이드
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs md:text-sm text-gray-300">
                 <div class="space-y-3">
-                    <p class="leading-relaxed">
+                    <p class="leading-relaxed text-gray-400">
                         <strong class="text-pink-400">💡 화면 모드가 어떻게 도움이 되나요?</strong><br>
                         시선 분산으로 인해 점수를 놓치신다면 <strong class="text-yellow-400">[거울 연습 모드]</strong>로 바꾸어 보세요. 내 실시간 카메라 화면이 모니터 전면을 채우고 가이드가 우측에 미니 오버레이로 떠서 댄스 연습실 거울처럼 정확하고 시선 이동 없는 연습이 가능합니다.
                     </p>
@@ -363,35 +377,32 @@
             const btnOverlay = document.getElementById("btn-mode-overlay");
 
             if (mode === 'split') {
-                // 클래식 레이아웃 복원 (비디오 5 : 카메라 7)
-                btnSplit.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 bg-indigo-600 text-white shadow";
-                btnOverlay.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 text-gray-400 hover:text-white";
+                btnSplit.className = "px-5 py-2.5 rounded-xl text-xs md:text-sm font-extrabold transition-all duration-300 bg-indigo-600 text-white shadow-lg";
+                btnOverlay.className = "px-5 py-2.5 rounded-xl text-xs md:text-sm font-extrabold transition-all duration-300 text-gray-400 hover:text-white";
                 
-                studioViewportContainer.className = "grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[680px] relative";
+                studioViewportContainer.className = "grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[750px] relative";
                 
-                videoCard.className = "glass-panel rounded-2xl overflow-hidden flex flex-col h-[680px] mode-transition shadow-2xl relative z-10 lg:col-span-5 w-full";
-                webcamCard.className = "glass-panel rounded-2xl overflow-hidden flex flex-col h-[680px] mode-transition shadow-2xl relative z-20 lg:col-span-7 w-full";
+                videoCard.className = "glass-panel rounded-2xl overflow-hidden flex flex-col h-[750px] mode-transition shadow-2xl relative z-10 lg:col-span-5 w-full";
+                webcamCard.className = "glass-panel rounded-3xl overflow-hidden flex flex-col h-[750px] mode-transition shadow-2xl relative z-20 lg:col-span-7 w-full border border-pink-500/20";
                 
                 document.getElementById("video-header").style.display = 'flex';
                 document.getElementById("video-controls").style.display = 'flex';
 
             } else {
-                // 오버레이 PIP 극장 모드로 변환 (카메라 전체 화면, 영상 우측 상단 플로팅화)
-                btnSplit.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 text-gray-400 hover:text-white";
-                btnOverlay.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 bg-indigo-600 text-white shadow";
+                btnSplit.className = "px-5 py-2.5 rounded-xl text-xs md:text-sm font-extrabold transition-all duration-300 text-gray-400 hover:text-white";
+                btnOverlay.className = "px-5 py-2.5 rounded-xl text-xs md:text-sm font-extrabold transition-all duration-300 bg-indigo-600 text-white shadow-lg";
                 
-                studioViewportContainer.className = "relative min-h-[680px] w-full flex items-center justify-center";
+                studioViewportContainer.className = "relative min-h-[750px] w-full flex items-center justify-center";
                 
-                // 가이드 영상을 작은 윈도우로 겹쳐서 우측 상단에 띄움
-                videoCard.className = "absolute top-4 right-4 w-[180px] sm:w-[320px] h-[110px] sm:h-[200px] rounded-xl overflow-hidden border border-indigo-500 shadow-2xl z-40 mode-transition bg-black";
-                webcamCard.className = "w-full h-[680px] rounded-2xl overflow-hidden flex flex-col mode-transition shadow-2xl relative z-20";
+                // 가이드 영상을 우측 상단 플로팅 윈도우로 띄움 (거울 오버랩 모드)
+                videoCard.className = "absolute top-4 right-4 w-[200px] sm:w-[350px] h-[120px] sm:h-[220px] rounded-2xl overflow-hidden border border-indigo-500/60 shadow-2xl z-40 mode-transition bg-black";
+                webcamCard.className = "w-full h-[750px] rounded-3xl overflow-hidden flex flex-col mode-transition shadow-2xl relative z-20 border border-pink-500/20";
                 
-                // 불필요한 컨트롤은 오버레이 연습 모드에서는 미니멀하게 처리하거나 숨김
                 document.getElementById("video-header").style.display = 'none';
                 document.getElementById("video-controls").style.display = 'none';
             }
 
-            // 카메라 리사이즈 강제 업데이트 호출
+            // 레이아웃 변경 시 갱신 처리
             setTimeout(() => {
                 if (webcam && typeof webcam.update === 'function') {
                     webcam.update();
@@ -414,28 +425,42 @@
                 model = await tmImage.load(modelURL, metadataURL);
                 maxPredictions = model.getTotalClasses();
 
-                // 모바일 및 데스크톱 브라우저 환경에서 높은 해상도를 요구하도록 웹캠 설정 변경
-                const width = 1280; // 기본 송출 해상도를 넓혀 고화질 확보
-                const height = 960;
+                // 모바일 및 데스크톱 카메라 프레임 해상도 확보
+                const width = 640;
+                const height = 480;
                 const flip = true; 
                 webcam = new tmImage.Webcam(width, height, flip);
                 
-                await webcam.setup(); // 카메라 프레임 허가 대기
+                await webcam.setup(); // 카메라 권한 요청 승인 대기
                 await webcam.play();
                 
                 document.getElementById("loading-ai").style.display = 'none';
                 
                 const container = document.getElementById("webcam-container");
+                
+                // 찌꺼기 캔버스 완전 삭제
                 container.querySelectorAll("canvas").forEach(c => c.remove());
+                container.querySelectorAll("video").forEach(v => v.remove());
+                
+                // 웹캠 내장 캔버스 부착
                 container.appendChild(webcam.canvas);
                 
-                // 수평 분류 지표 생성
+                // [핵심] 웹캠 내부 영상 엘리먼트 강제 추출 및 반응형 스타일링 동기화
+                const webCamVideoElement = webcam.webcam;
+                if (webCamVideoElement) {
+                    webCamVideoElement.style.width = "100%";
+                    webCamVideoElement.style.height = "100%";
+                    webCamVideoElement.style.objectFit = "cover";
+                    container.appendChild(webCamVideoElement);
+                }
+
+                // 분류 계량 바 생성
                 predictionBars.innerHTML = "";
                 for (let i = 0; i < maxPredictions; i++) {
                     const classId = `class-bar-${i}`;
                     const labelId = `class-label-${i}`;
                     const classContainer = document.createElement("div");
-                    classContainer.className = "bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 transition-all duration-300";
+                    classContainer.className = "bg-slate-950/80 p-2.5 rounded-xl border border-slate-850/80 transition-all duration-300";
                     classContainer.innerHTML = `
                         <div class="flex justify-between text-[9px] text-gray-300 font-bold mb-1">
                             <span id="${labelId}">-</span>
@@ -454,16 +479,17 @@
             } catch (error) {
                 console.error("AI 로드 에러:", error);
                 document.getElementById("loading-ai").innerHTML = `
-                    <i class="fa-solid fa-triangle-exclamation text-red-500 text-3xl"></i>
-                    <p class="text-sm text-red-400 mt-2 font-bold">카메라 구동 실패: HTTPS 연결 및 디바이스 권한을 점검해 주세요.</p>
-                    <button onclick="location.reload()" class="mt-3 bg-slate-800 hover:bg-slate-700 text-xs px-4 py-2 rounded-lg text-white">다시 연결 시도</button>
+                    <i class="fa-solid fa-triangle-exclamation text-red-500 text-4xl mb-2"></i>
+                    <p class="text-sm text-red-400 mt-2 font-bold">카메라 권한 거부 또는 HTTPS 환경 에러</p>
+                    <p class="text-xs text-gray-400 mt-1">로컬 테스트 시 localhost 브라우저 접근 혹은 배포된 https 채널에서 구동해주세요.</p>
+                    <button onclick="location.reload()" class="mt-4 bg-slate-800 hover:bg-slate-700 text-xs px-5 py-2.5 rounded-xl text-white font-bold transition">다시 연결 시도</button>
                 `;
             }
         }
 
         // 모션 감지 상시 순환 루프
         async function animationLoop() {
-            if (isAILoaded && webcam && webcam.webcam) {
+            if (isAILoaded && webcam) {
                 try {
                     webcam.update(); // 웹캠 픽셀 수집
                     await predictDanceMove();
@@ -496,7 +522,6 @@
                 
                 if (fillBar) {
                     fillBar.style.width = `${confidence * 100}%`;
-                    // 현재 핵심 미션 동작과 분석기가 가리키는 동작 일치 시 타겟 바의 색상을 노란색 강조 처리
                     if (classLabel === currentTarget && currentTarget !== "REST") {
                         fillBar.className = "bg-yellow-400 h-full w-0 transition-all duration-150";
                         fillBar.parentElement.parentElement.classList.add("border-yellow-500/40", "bg-yellow-500/5");
@@ -517,7 +542,7 @@
             myActionVal.innerText = actionText;
             myActionValMobile.innerText = actionText;
 
-            // 핵심 점수 메커니즘 검출 (동작 자신감 75% 이상 일치 판단)
+            // 동작 자신감 75% 이상 일치 판단 시 점수 추가
             if (maxConfidence > 0.75) {
                 const isPlaying = player && typeof player.getPlayerState === 'function' && player.getPlayerState() === YT.PlayerState.PLAYING;
                 
@@ -545,7 +570,6 @@
                             }, 300);
 
                         } else if (bestClass !== currentTarget) {
-                            // 동작 이탈 시 콤보만 가차 없이 리셋 처리
                             combo = 0;
                             comboVal.innerText = combo;
                             triggerPerfectEffect(false);

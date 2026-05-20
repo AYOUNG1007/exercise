@@ -28,11 +28,15 @@
         .glow-purple {
             box-shadow: 0 0 25px rgba(168, 85, 247, 0.5);
         }
-        /* 캔버스 반전 (거울 모드) */
+        /* 캔버스 반전 (거울 모드) 및 모바일 반응형 크기 조절 */
         canvas {
             transform: rotateY(180deg);
-            -webkit-transform:rotateY(180deg);
-            -moz-transform:rotateY(180deg);
+            -webkit-transform: rotateY(180deg);
+            -moz-transform: rotateY(180deg);
+            border-radius: 12px;
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover;
         }
     </style>
 </head>
@@ -44,7 +48,7 @@
             AI DANCE SYNC CHALLENGE
         </h1>
         <p class="text-gray-400 mt-2 text-sm md:text-base">
-            유튜브 가이드 영상을 보며 동작을 따라해보세요! AI가 당신의 춤을 평가합니다.
+            유튜브 가이드 영상을 보며 동작을 따라해보세요! AI가 당신의 춤을 실시간 평가합니다.
         </p>
     </header>
 
@@ -61,7 +65,7 @@
             <!-- Combo -->
             <div class="border-none md:border-r border-slate-700/50">
                 <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Combo</p>
-                <div class="text-3xl md:text-4xl font-extrabold text-purple-400 mt-1 animate-pulse" id="combo-val">0</div>
+                <div class="text-3xl md:text-4xl font-extrabold text-purple-400 mt-1" id="combo-val">0</div>
             </div>
             <!-- Current Mission -->
             <div class="border-r border-slate-700/50 col-span-1">
@@ -115,11 +119,16 @@
                 </div>
                 
                 <!-- Camera and Canvas Wrapper -->
-                <div class="relative flex-grow bg-slate-950 flex items-center justify-center">
-                    <div id="webcam-container" class="relative w-full h-full flex items-center justify-center">
-                        <div id="loading-ai" class="absolute flex flex-col items-center gap-3 text-center z-10">
-                            <div class="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                            <p class="text-sm text-gray-300 font-medium">Teachable Machine 모델을 로드 중...</p>
+                <div class="relative flex-grow bg-slate-950 flex items-center justify-center p-2">
+                    <!-- 고정 크기 제한을 없애고 유연한 가로세로 정렬 유지 -->
+                    <div id="webcam-container" class="relative w-full h-full max-h-[380px] flex items-center justify-center overflow-hidden rounded-xl">
+                        <div id="loading-ai" class="absolute flex flex-col items-center gap-3 text-center z-10 p-4">
+                            <button onclick="initAI()" id="start-camera-btn" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 px-6 py-3 rounded-xl font-bold text-white shadow-lg transform active:scale-95 transition flex items-center gap-2 text-base">
+                                <i class="fa-solid fa-video"></i> 게임 시작 및 카메라 허용
+                            </button>
+                            <p class="text-xs text-gray-400 mt-2 max-w-xs leading-relaxed">
+                                카메라 권한 및 AI 초기 로드를 완료하기 위해 위 버튼을 눌러주세요.
+                            </p>
                         </div>
                     </div>
                     <!-- Match Flash Feedback Screen Overlay -->
@@ -144,8 +153,8 @@
             <h3 class="text-lg font-bold text-slate-100 mb-3"><i class="fa-solid fa-circle-info text-indigo-400 mr-2"></i>게임 방법 및 동작 구성</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
                 <ul class="list-disc list-inside space-y-2">
-                    <li>가이드 비디오의 우측 상단 '재생' 버튼을 눌러 게임을 진행해 주세요.</li>
-                    <li>웹캠 사용 권한 요청 시 반드시 '허용'을 선택하셔야 티처블 머신 인식 기능이 구동됩니다.</li>
+                    <li><strong>[중요]</strong> 먼저 우측의 <strong class="text-emerald-400">카메라 시작 및 웹앱 구동</strong> 버튼을 눌러 모션을 활성화해주세요.</li>
+                    <li>가이드 비디오의 우측 하단 플레이어 컨트롤 혹은 하단 '재생' 버튼을 눌러 게임을 진행해 주세요.</li>
                     <li>화면에 표시되는 <strong>Target</strong> 동작과 당신의 웹캠 모션이 정확하게 일치하면 초당 점수가 상승합니다.</li>
                     <li>연속 매칭 시 <strong>Combo</strong> 보너스가 부여되며, 더 빠른 속도로 득점합니다.</li>
                 </ul>
@@ -161,11 +170,9 @@
     </main>
 
     <!-- Scripts -->
-    <!-- TensorFlow.js & Teachable Machine Image Library -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+    <!-- TensorFlow.js (안정성을 극대화한 3.18.0 버전 고정) -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.18.0/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.3/dist/teachablemachine-image.min.js"></script>
-    <!-- YouTube IFrame Player API -->
-    <script src="https://www.youtube.com/iframe_api"></script>
 
     <script>
         // --- 글로벌 환경 설정 ---
@@ -173,7 +180,6 @@
         const VIDEO_ID = "oRr5hxr_bRA"; // 유튜브 비디오 고유 ID
         
         // ★ 비디오 흐름 분석에 맞춘 세련된 타임라인 설정 (동작 순서 기준)
-        // 사용자의 피드백을 기초로 하여 각 클래스 순차 할당.
         const timeline = [
             { name: "REST", start: 0, end: 15 },
             { name: "SAY HI", start: 15, end: 30 },
@@ -181,7 +187,7 @@
             { name: "SWING", start: 45, end: 60 },
             { name: "PAW", start: 60, end: 75 },
             { name: "JUMP", start: 75, end: 95 },
-            { name: "REST", start: 95, end: 150 }
+            { name: "REST", start: 95, end: 200 }
         ];
 
         let player;
@@ -212,7 +218,12 @@
             `).join('');
         }
 
-        // 1. 유튜브 플레이어 세팅
+        // 1. 유튜브 플레이어 동적 스크립트 인젝션
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('player', {
                 videoId: VIDEO_ID,
@@ -233,14 +244,13 @@
         function onPlayerReady(event) {
             // 주기적으로 타임라인 검수 및 동기화 루틴 가동
             setInterval(syncGameLoop, 200);
-            initAI();
             initTimelineUI();
         }
 
         // 비디오 컨트롤러 함수군
-        function playVideo() { if (player) player.playVideo(); }
-        function pauseVideo() { if (player) player.pauseVideo(); }
-        function restartVideo() { if (player) { player.seekTo(0); player.playVideo(); } }
+        function playVideo() { if (player && typeof player.playVideo === 'function') player.playVideo(); }
+        function pauseVideo() { if (player && typeof player.pauseVideo === 'function') player.pauseVideo(); }
+        function restartVideo() { if (player && typeof player.seekTo === 'function') { player.seekTo(0); player.playVideo(); } }
 
         // 게임 루프: 주기적으로 비디오 진행상태 체크 후 타깃 교체
         function syncGameLoop() {
@@ -279,10 +289,18 @@
 
         // 2. 티처블 머신 AI 모델 및 카메라 활성화
         async function initAI() {
+            const startBtn = document.getElementById("start-camera-btn");
+            
+            if (startBtn) {
+                startBtn.disabled = true;
+                startBtn.innerHTML = `<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div> 로딩 중...`;
+            }
+
             const modelURL = MODEL_URL + "model.json";
             const metadataURL = MODEL_URL + "metadata.json";
 
             try {
+                // 모델 로드
                 model = await tmImage.load(modelURL, metadataURL);
                 maxPredictions = model.getTotalClasses();
 
@@ -292,12 +310,18 @@
                 const flip = true; 
                 webcam = new tmImage.Webcam(width, height, flip);
                 
-                await webcam.setup();
+                await webcam.setup(); // 카메라 접근 요청 승인 대기
+                
+                // [수정 포인트 1]: 확실한 재생 시작 처리를 위해 play() 완료 상태를 await 처리합니다.
                 await webcam.play();
                 
-                // 로더 스피너 숨김 및 웹캠 이식
+                // 로더 스피너 및 스타트 버튼 컨테이너 숨김 후 웹캠 이식
                 document.getElementById("loading-ai").style.display = 'none';
-                document.getElementById("webcam-container").appendChild(webcam.canvas);
+                
+                // 기존 혹시 모를 캔버스 중복 부착 방지 처리
+                const container = document.getElementById("webcam-container");
+                container.querySelectorAll("canvas").forEach(c => c.remove());
+                container.appendChild(webcam.canvas);
                 
                 // 확률 바 컴포넌트 동적 생성
                 predictionBars.innerHTML = "";
@@ -319,28 +343,40 @@
                 }
 
                 isAILoaded = true;
-                // 실시간 프레임 감지 시작
-                window.requestAnimationFrame(animationLoop);
+                
+                // [수정 포인트 2]: 실시간 렌더러 프레임 루프 가동
+                requestAnimationFrame(animationLoop);
 
             } catch (error) {
                 console.error("AI 카메라 구동 에러:", error);
                 document.getElementById("loading-ai").innerHTML = `
                     <i class="fa-solid fa-triangle-exclamation text-red-500 text-3xl"></i>
-                    <p class="text-sm text-red-400 mt-2">카메라 하드웨어가 비활성화 상태이거나 HTTPS 통신이 아닙니다.</p>
+                    <p class="text-sm text-red-400 mt-2 font-bold">카메라 권한을 승인해주셔야 원활한 게임 이용이 가능합니다.</p>
+                    <p class="text-xs text-gray-400 mt-1">HTTPS 환경이거나 브라우저 권한에서 웹캠을 차단하지 않았는지 확인해 주세요.</p>
+                    <button onclick="location.reload()" class="mt-3 bg-slate-800 hover:bg-slate-700 text-xs px-4 py-2 rounded-lg font-medium text-white">다시 로드하기</button>
                 `;
             }
         }
 
+        // [수정 포인트 3]: 화면 멈춤 현상을 완전히 방어하는 순환 애니메이션 루틴
         async function animationLoop() {
-            if (isAILoaded) {
-                webcam.update(); // 웹캠 프레임 렌더러 반영
-                await predictDanceMove();
+            if (isAILoaded && webcam && webcam.webcam) {
+                try {
+                    // 웹캠 프레임의 재생 상태를 강제 업데이트합니다.
+                    webcam.update(); 
+                    await predictDanceMove();
+                } catch (e) {
+                    console.warn("Loop Frame Processing Warn:", e);
+                }
             }
-            window.requestAnimationFrame(animationLoop);
+            // 끊김 없이 루프를 돌도록 최적화
+            requestAnimationFrame(animationLoop);
         }
 
         // 3. 모션 인식 및 실시간 판독 시스템
         async function predictDanceMove() {
+            if (!model || !webcam || !webcam.canvas) return;
+            
             const prediction = await model.predict(webcam.canvas);
             
             let bestClass = "REST";
@@ -351,17 +387,21 @@
                 const classLabel = prediction[i].className;
                 const confidence = prediction[i].probability;
 
-                document.getElementById(`class-label-${i}`).innerText = classLabel;
-                document.getElementById(`class-bar-${i}-pct`).innerText = `${Math.round(confidence * 100)}%`;
-                
+                const labelEl = document.getElementById(`class-label-${i}`);
+                const pctEl = document.getElementById(`class-bar-${i}-pct`);
                 const fillBar = document.getElementById(`class-bar-${i}-fill`);
-                fillBar.style.width = `${confidence * 100}%`;
 
-                // 현재 타깃 클래스 바는 특수 색상 처리로 유저 가독성 극대화
-                if (classLabel === currentTarget) {
-                    fillBar.className = "bg-yellow-400 h-full w-0 transition-all duration-100";
-                } else {
-                    fillBar.className = "bg-indigo-500 h-full w-0 transition-all duration-100";
+                if (labelEl) labelEl.innerText = classLabel;
+                if (pctEl) pctEl.innerText = `${Math.round(confidence * 100)}%`;
+                
+                if (fillBar) {
+                    fillBar.style.width = `${confidence * 100}%`;
+                    // 현재 타깃 클래스 바는 특수 색상 처리로 유저 가독성 극대화
+                    if (classLabel === currentTarget) {
+                        fillBar.className = "bg-yellow-400 h-full w-0 transition-all duration-100";
+                    } else {
+                        fillBar.className = "bg-indigo-500 h-full w-0 transition-all duration-100";
+                    }
                 }
 
                 if (confidence > maxConfidence) {
@@ -384,7 +424,7 @@
                     // 500ms(0.5초) 주기로 득점 평가 진행
                     if (now - lastEvaluationTime > 500) {
                         
-                        // 현재 타깃 액션과 플레이어의 실제 액션 매칭 검수 (REST 동작은 연속 기본동작이므로 득점 처리 최소화 또는 제외 가능)
+                        // 현재 타깃 액션과 플레이어의 실제 액션 매칭 검수
                         if (bestClass === currentTarget && currentTarget !== "REST") {
                             
                             // 콤보 누적 및 보너스 적용
@@ -408,7 +448,7 @@
                             }, 300);
 
                         } else if (bestClass !== currentTarget) {
-                            // 동작 실패 시 점수 차감없이 콤보만 깨지도록 설정
+                            // 동작 실패 시 콤보만 깨지도록 설정
                             combo = 0;
                             comboVal.innerText = combo;
                             triggerPerfectEffect(false);
@@ -417,6 +457,9 @@
                         lastEvaluationTime = now;
                     }
                 }
+            } else {
+                // 자신감이 부족할 시 효과 제거
+                triggerPerfectEffect(false);
             }
         }
 

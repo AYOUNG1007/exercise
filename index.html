@@ -28,17 +28,19 @@
         .glow-purple {
             box-shadow: 0 0 30px rgba(168, 85, 247, 0.4);
         }
-        /* 카메라 거울 모드 반전 & 꽉 차는 레이아웃 핵심 세팅 */
-        canvas {
-            transform: scaleX(-1);
-            -webkit-transform: scaleX(-1);
-            -moz-transform: scaleX(-1);
-            border-radius: 16px;
+        
+        /* [중요 수정] 티처블 머신 라이브러리가 생성하는 canvas 크기를 억제하고 100% 꽉 채우도록 강제 설정 */
+        #webcam-container canvas {
+            transform: scaleX(-1) !important;
+            -webkit-transform: scaleX(-1) !important;
+            -moz-transform: scaleX(-1) !important;
+            border-radius: 12px;
             width: 100% !important;
             height: 100% !important;
-            object-fit: contain; /* 이미지 비율 유지하며 꽉 차게 변경해 잘림 방지 */
+            object-fit: cover !important; /* 이미지 잘림 및 압축 없이 화면을 채우도록 수정 */
             background-color: #020617;
         }
+        
         /* 부드러운 전환 효과 */
         .mode-transition {
             transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
@@ -113,11 +115,11 @@
         </section>
 
         <!-- Interactive Studio Screen Viewports -->
-        <!-- 'view-split-layout' or 'view-overlay-layout' class handles the transition in Javascript -->
-        <section id="studio-viewport-container" class="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[480px] relative">
+        <!-- 세로 높이를 h-[480px]에서 h-[560px]으로 확장하여 더 웅장하고 큰 화면을 확보합니다. -->
+        <section id="studio-viewport-container" class="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[560px] relative">
             
             <!-- Video Stage Card -->
-            <div id="video-card" class="glass-panel rounded-2xl overflow-hidden flex flex-col h-[480px] mode-transition shadow-2xl relative z-10">
+            <div id="video-card" class="glass-panel rounded-2xl overflow-hidden flex flex-col h-[560px] mode-transition shadow-2xl relative z-10">
                 <div id="video-header" class="bg-slate-900/90 px-4 py-2.5 border-b border-slate-800/80 flex justify-between items-center">
                     <span class="font-bold text-xs text-indigo-300 flex items-center gap-2">
                         <i class="fa-solid fa-circle-play text-rose-500 animate-pulse"></i> DANCE GUIDE VIDEO
@@ -143,7 +145,7 @@
             </div>
 
             <!-- Webcam AI Detection Stage Card -->
-            <div id="webcam-card" class="glass-panel rounded-2xl overflow-hidden flex flex-col h-[480px] mode-transition shadow-2xl relative z-20">
+            <div id="webcam-card" class="glass-panel rounded-2xl overflow-hidden flex flex-col h-[560px] mode-transition shadow-2xl relative z-20">
                 <div class="bg-slate-900/90 px-4 py-2.5 border-b border-slate-800/80 flex justify-between items-center">
                     <span class="font-bold text-xs text-pink-400 flex items-center gap-2">
                         <i class="fa-solid fa-video text-pink-500 animate-pulse"></i> AI MOTION DETECTOR (MIRROR)
@@ -154,7 +156,8 @@
                 </div>
                 
                 <!-- Camera view area (Guaranteed aspect containment) -->
-                <div class="relative flex-grow bg-slate-950 flex items-center justify-center p-2 overflow-hidden">
+                <!-- [수정] 4분의 1 크기로 잘리던 현상을 없애고, 내부 공간을 100% 가로세로 활용하도록 패딩 및 크기 제약을 완전히 제거했습니다. -->
+                <div class="relative flex-grow bg-slate-950 flex items-center justify-center overflow-hidden">
                     <div id="webcam-container" class="relative w-full h-full flex items-center justify-center rounded-xl overflow-hidden">
                         <div id="loading-ai" class="absolute inset-0 flex flex-col items-center justify-center gap-4 text-center z-30 p-4 bg-slate-950/90">
                             <button onclick="initAI()" id="start-camera-btn" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 px-6 py-4 rounded-xl font-black text-white shadow-lg transform active:scale-95 transition flex items-center gap-2 text-lg glow-green">
@@ -362,10 +365,10 @@
                 btnSplit.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 bg-indigo-600 text-white shadow";
                 btnOverlay.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 text-gray-400 hover:text-white";
                 
-                studioViewportContainer.className = "grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[480px] relative";
+                studioViewportContainer.className = "grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[560px] relative";
                 
-                videoCard.className = "glass-panel rounded-2xl overflow-hidden flex flex-col h-[480px] mode-transition shadow-2xl relative z-10 w-full";
-                webcamCard.className = "glass-panel rounded-2xl overflow-hidden flex flex-col h-[480px] mode-transition shadow-2xl relative z-20 w-full";
+                videoCard.className = "glass-panel rounded-2xl overflow-hidden flex flex-col h-[560px] mode-transition shadow-2xl relative z-10 w-full";
+                webcamCard.className = "glass-panel rounded-2xl overflow-hidden flex flex-col h-[560px] mode-transition shadow-2xl relative z-20 w-full";
                 
                 document.getElementById("video-header").style.display = 'flex';
                 document.getElementById("video-controls").style.display = 'flex';
@@ -375,18 +378,18 @@
                 btnSplit.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 text-gray-400 hover:text-white";
                 btnOverlay.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 bg-indigo-600 text-white shadow";
                 
-                studioViewportContainer.className = "relative min-h-[480px] w-full flex items-center justify-center";
+                studioViewportContainer.className = "relative min-h-[560px] w-full flex items-center justify-center";
                 
                 // 가이드 영상을 작은 윈도우로 겹쳐서 우측 상단에 띄움
                 videoCard.className = "absolute top-4 right-4 w-[180px] sm:w-[260px] h-[110px] sm:h-[160px] rounded-xl overflow-hidden border border-indigo-500 shadow-2xl z-40 mode-transition bg-black";
-                webcamCard.className = "w-full h-[480px] rounded-2xl overflow-hidden flex flex-col mode-transition shadow-2xl relative z-20";
+                webcamCard.className = "w-full h-[560px] rounded-2xl overflow-hidden flex flex-col mode-transition shadow-2xl relative z-20";
                 
                 // 불필요한 컨트롤은 오버레이 연습 모드에서는 미니멀하게 처리하거나 숨김
                 document.getElementById("video-header").style.display = 'none';
                 document.getElementById("video-controls").style.display = 'none';
             }
 
-            // 카메라 사이즈 가상 리사이즈 발동으로 레이아웃 흐트러짐 재방지
+            // 카메라 리사이즈 강제 업데이트 호출
             setTimeout(() => {
                 if (webcam && typeof webcam.update === 'function') {
                     webcam.update();
@@ -409,7 +412,7 @@
                 model = await tmImage.load(modelURL, metadataURL);
                 maxPredictions = model.getTotalClasses();
 
-                // 카메라 프레임 완벽 크기 비율 조정
+                // 카메라의 물리적 해상도를 640x480으로 유지하되 스타일링을 통해 부모 크기에 완벽 밀착시킵니다.
                 const width = 640;
                 const height = 480;
                 const flip = true; 
